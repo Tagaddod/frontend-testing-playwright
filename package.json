@@ -1,0 +1,27 @@
+{
+  "name": "frontend-testing-playwright",
+  "version": "1.0.0",
+  "description": "Frontend Testing with Playwright\r This repository contains the end-to-end (E2E) automation testing framework for the B2C React Webform using Playwright with TypeScript.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Tagaddod/frontend-testing-playwright.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Tagaddod/frontend-testing-playwright/issues"
+  },
+  "homepage": "https://github.com/Tagaddod/frontend-testing-playwright#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.52.0",
+    "playwright": "^1.52.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
