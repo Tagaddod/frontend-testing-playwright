@@ -19,8 +19,8 @@
   },
   "homepage": "https://github.com/Tagaddod/frontend-testing-playwright#readme",
   "devDependencies": {
-    "@playwright/test": "^1.52.0",
-    "playwright": "^1.52.0",
+    "@playwright/test": "^1.58.2",
+    "playwright": "^1.58.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
   }
