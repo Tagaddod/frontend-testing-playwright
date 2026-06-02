@@ -1,0 +1,62 @@
+name: Run Playwright Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        description: Environment
+        required: true
+        default: staging
+        type: choice
+        options:
+          - dev
+          - staging
+          - uat
+      platform:
+        description: Platform
+        required: true
+        default: b2b
+        type: choice
+        options:
+          - b2b
+          - greenpan
+      suite:
+        description: Test suite
+        required: true
+        default: e2e
+        type: choice
+        options:
+          - smoke
+          - regression
+          - e2e
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      ENV: ${{ inputs.env }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+      - run: npm run test:install-browsers
+      - run: npm run test:ci -- --platform=${{ inputs.platform }} --suite=${{ inputs.suite }}
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-${{ inputs.platform }}-${{ inputs.suite }}-${{ inputs.env }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14

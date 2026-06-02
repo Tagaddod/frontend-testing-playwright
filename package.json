@@ -1,10 +1,16 @@
 {
   "name": "frontend-testing-playwright",
   "version": "1.0.0",
-  "description": "Frontend Testing with Playwright\r This repository contains the end-to-end (E2E) automation testing framework for the B2C React Webform using Playwright with TypeScript.",
-  "main": "index.js",
+  "description": "Playwright TypeScript E2E framework for B2B, B2C, GreenPan, and Webform",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ci": "bash scripts/run-tests-ci.sh",
+    "test:install-browsers": "playwright install --with-deps chromium",
+    "report:open": "playwright show-report playwright-report",
+    "b2b": "npx playwright test --project=b2b",
+    "b2b:newbranch:debug": "playwright test --project=b2b --debug --workers=1 tests/b2b/e2eCreateNewBranch.spec.ts -g \"Create new branch\"",
+    "greenpan": "npx playwright test --grep @greenpan"
   },
   "repository": {
     "type": "git",
@@ -20,8 +26,12 @@
   "homepage": "https://github.com/Tagaddod/frontend-testing-playwright#readme",
   "devDependencies": {
     "@playwright/test": "^1.58.2",
+    "@types/dotenv": "^6.1.1",
     "playwright": "^1.58.2",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3"
   }
 }
