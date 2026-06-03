@@ -1,0 +1,46 @@
+{
+    "phones": {
+      "validNewUser": "01020045408",
+      "validUser":"01126272662",
+      "invalidUser": "012345",
+      "anotherUser": "01000100001"
+    },
+  
+    "quantities": {
+      "small": 1,
+      "medium": 5,
+      "large": 10
+    },
+  
+    "addresses": {
+      "cairo": {
+        "governorate": "القاهرة",
+        "area": "مدينة نصر",
+        "district": "استاد القاهرة",
+        "street": "nasrcity",
+        "building": "5",
+        "apartment": "2",
+        "floor": "5",
+        "clientName": "Haidy"
+      }
+    },
+    "b2b": {
+      "branchNamePrefix": "test-branch",
+      "existingBranchName": "كريف",
+      "phonePrefixes": ["010", "011", "012", "015"],
+      "countryCode": "20",
+      "address": "30.012345678,31.012345678",
+      "paymentMethod": "cash",
+      "preferredDay": "الاحد",
+      "preferredTime": "صباحاَ",
+      "errors": {
+        "phoneRequired": "رقم التليفون الرئيسي مطلوب",
+        "phoneAlreadyExists": "رقم التليفون مستخدم من قبل",
+        "nameAlreadyExists": "اسم العميل موجود بالفعل"
+      }
+    },
+    "b2bInvalidSubmission": {
+      "phone": "012345",
+      "address": "not-valid-coordinates"
+    }
+}

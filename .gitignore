@@ -1,0 +1,6 @@
+node_modules/
+playwright-report/
+.html-report/
+test-results/
+.env
+playwright/.auth/user.json
