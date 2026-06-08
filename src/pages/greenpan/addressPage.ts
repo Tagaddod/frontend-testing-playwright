@@ -23,17 +23,21 @@ export class addressPage{
         this.addAddress=page.getByRole('button',{name:'إضافة عنوان'});
     }
     async selectGovernorate(name: string) {
-        await this.governorateDropdown.click();
-        await this.page.getByRole('option', { name }).click();
+        await this.selectComboboxOption(this.governorateDropdown, name);
     }
       async selectArea(name:string){
-        await this.areaInputDropdown.click();
-        await this.page.getByRole('option',{name}).click();
-        
+        await this.selectComboboxOption(this.areaInputDropdown, name);
       }
       async selectDistrict(name:string){
-        await this.districtInputDropdown.click();
-        await this.page.getByRole('option', { name }).click();
+        await this.selectComboboxOption(this.districtInputDropdown, name);
+      }
+
+      private async selectComboboxOption(combobox: Locator, name: string) {
+        await combobox.click();
+        await this.page
+          .getByRole('listbox')
+          .getByRole('option', { name, exact: true })
+          .click();
       }
       async enterStreetName(streetName : string){
         await this.streetNameInput.fill(streetName);

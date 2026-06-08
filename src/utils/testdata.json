@@ -14,8 +14,8 @@
   
     "addresses": {
       "cairo": {
-        "governorate": "القاهرة",
-        "area": "مدينة نصر",
+        "governorate": "Cairo",
+        "area": "Nasr City",
         "district": "استاد القاهرة",
         "street": "nasrcity",
         "building": "5",
