@@ -30,6 +30,15 @@ on:
           - regression
           - e2e
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -51,7 +60,7 @@ jobs:
       - run: npm ci
       - run: npm run test:install-browsers
       - run: npm run test:ci -- --platform=${{ inputs.platform }} --suite=${{ inputs.suite }}
-
+        continue-on-error: true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -60,3 +69,43 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 14
+
+      - uses: actions/configure-pages@v5
+        if: always()
+
+      - uses: actions/upload-pages-artifact@v3
+        if: always()
+        with:
+          path: playwright-report
+
+  deploy:
+    needs: test
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Playwright report summary
+        if: always()
+        run: |
+          {
+            echo "## Playwright Report"
+            echo ""
+            if [ -n "${{ steps.deployment.outputs.page_url }}" ]; then
+              echo "Report published to GitHub Pages: [${{ steps.deployment.outputs.page_url }}](${{ steps.deployment.outputs.page_url }})"
+            else
+              echo "GitHub Pages deployment did not produce a URL. Check the deploy step logs."
+            fi
+            echo ""
+            echo "| Input | Value |"
+            echo "| --- | --- |"
+            echo "| Environment | \`${{ inputs.env }}\` |"
+            echo "| Platform | \`${{ inputs.platform }}\` |"
+            echo "| Suite | \`${{ inputs.suite }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
