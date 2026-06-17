@@ -11,11 +11,11 @@ export class sendB2BRequestPage {
 
   constructor(private page: Page) {
     this.createRequestButton = page.getByText("عمل طلب جديد");
-    this.addCollactableButton=page.locator('[aria-label="إضافة زيت مستعمل"]');
+    this.addCollactableButton=page.getByLabel("إضافة زيت مستعمل");
     this.deleteCollactableButton=page.getByText('حذف');
     this.increaseQuantityButton=page.locator('[aria-label="زيادة عدد زيت مستعمل"]');
     this.reduceQuantityButton=page.locator('[aria-label="تقليل عدد زيت مستعمل"]');
-    this.nextBTN=page.getByRole('button', { name: 'التالي' });
+    this.nextBTN = page.getByRole("button", { name: "التالي" }).last();
   }
 
   async clickCreateRequestButton() {
@@ -46,7 +46,7 @@ export class sendB2BRequestPage {
 
 
   async CreateRequestFlow(){
-    await this.clickCreateRequestButton();
+    //await this.clickCreateRequestButton();
     await this.ClickAddCollactableButton();
     await this.increaseQuantity(2);
     await this.clickNextButton();

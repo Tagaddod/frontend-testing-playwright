@@ -62,7 +62,7 @@ export class PoManager {
     phone: string;
     address: string;
   }) {
-    await this.getNewClientForm().completeB2BCreateNewBranchFlow(data);
+    return this.getNewClientForm().completeB2BCreateNewBranchFlow(data);
   }
 
 }

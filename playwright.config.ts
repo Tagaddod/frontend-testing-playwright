@@ -16,7 +16,6 @@ export default defineConfig({
     actionTimeout: 15_000,
     ignoreHTTPSErrors: true,
     screenshot: "only-on-failure",
-    video: "retain-on-failure",
   },
 
   reporter: [

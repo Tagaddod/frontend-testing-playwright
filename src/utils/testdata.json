@@ -36,7 +36,12 @@
       "errors": {
         "phoneRequired": "رقم التليفون الرئيسي مطلوب",
         "phoneAlreadyExists": "رقم التليفون مستخدم من قبل",
-        "nameAlreadyExists": "اسم العميل موجود بالفعل"
+        "nameAlreadyExists": "اسم العميل موجود بالفعل",
+        "countryCodeRequired": "رمز الدولة مطلوب",
+        "addressRequired": "عنوان الفرع مطلوب",
+        "collectablesRequired": "يجب اختيار نوع واحد علي الاقل من المخلفات المتاحة",
+        "paymentMethodRequired": "طريقة الدفع مطلوبة",
+        "photoRequired": "بانر الفرع مطلوب"
       }
     },
     "b2bInvalidSubmission": {
