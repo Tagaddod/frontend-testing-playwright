@@ -4,18 +4,23 @@ import { URLs } from "../../config/urls";
 /**
  * Branch selection step on B2B "تسجيل طلب بيزنس" — combobox search, not a plain Search input.
  */
-export class sendRequestPage {
+export class B2BHomePage {
   readonly branchCombobox: Locator;
   readonly nxtButton: Locator;
   readonly createNewBranchBTN: Locator;
   readonly branchNameInput:Locator;
+  readonly searchBranch:Locator;
   readonly AddNewClientBTN:Locator;
     readonly EnglishInputName:Locator;
     readonly businessType:Locator;
     readonly clientNameErrorMessage: Locator;
 
     constructor(private page: Page) {
-    this.branchCombobox = page.getByRole("combobox").first();
+    this.branchCombobox = page
+      .locator(".ant-form-item")
+      .filter({ hasText: "الفرع" })
+      .first()
+      .getByRole("combobox");
     this.nxtButton = page.locator('[tag-test-id="business-client-form-submit-button"]');
     this.createNewBranchBTN=page.getByRole('button', { name: 'إضافة فرع جديد' });
     this.branchNameInput=page.getByPlaceholder('ابحث بإسم البيزنس');
@@ -34,43 +39,44 @@ export class sendRequestPage {
     await this.branchCombobox.click();
   }
 
-  async enterBranchName(branchName: string) {
-    await this.branchCombobox.click();
-    await this.branchCombobox.fill(branchName);
+  async selectBranch(branchName: string) {
+    await this.clickSearch();
 
-    // Last portaled dropdown is the open one; first row inside it.
-    const firstRow = this.page
+  await this.branchCombobox.fill(branchName);
+
+  const firstOption = this.page
+    .locator(".ant-select-dropdown")
+    .last()
+    .locator(".ant-select-item-option")
+    .first();
+
+  await expect(firstOption).toBeVisible();
+  await firstOption.click();
+  await this.page.locator('[tag-test-id="existing_branch__proceed_button"]').click();
+  }
+
+  async selectBusiness(businessName: string) {
+    await this.page.locator("#nameAR").fill(businessName);
+    const option = this.page
       .locator("div.ant-select-dropdown")
       .last()
       .locator(".ant-select-item-option, [role='option']")
+      .filter({ hasText: businessName })
       .first();
-
-    try {
-      await firstRow.waitFor({ state: "visible", timeout: 20_000 });
-      await firstRow.click();
-    } catch (err) {
-      if (this.page.isClosed()) throw err;
-      await this.branchCombobox.focus();
-      await this.page.keyboard.press("ArrowDown");
-      await this.page.keyboard.press("Enter");
-    }
-  }
-
-  async selectBranch(branchName: string) {
-    await this.clickSearch();
-    await this.enterBranchName(branchName);
+    await option.waitFor({ state: "attached", timeout: 15_000 });
+    await option.click({ force: true });
   }
 
   async clickNextButton() {
-    const formNext = this.page.locator('[tag-test-id="business-client-form-submit-button"]');
-    const branchNext = this.page.getByLabel("التالي");
-    const next = (await formNext.isVisible()) ? formNext : branchNext;
-    await expect(next).toBeEnabled({ timeout: 15_000 });
-    await next.click();
+  const formNext = this.page.locator('[tag-test-id="business-client-form-submit-button"]');
+  await expect(formNext).toBeEnabled({ timeout: 15_000 });
+  await formNext.click();
   }
+  
 
   async ClickCreateNewBranchButton() {
     await this.createNewBranchBTN.click();
+    await expect(this.branchNameInput).toBeVisible({ timeout: 15_000 });
   }
   async AddNewCleint(branchName: string) {
     await this.branchNameInput.fill(branchName);
@@ -99,7 +105,4 @@ export class sendRequestPage {
   }
 
 }
-
-/** Alias for specs and PO naming — same class as {@link sendRequestPage}. */
-export { sendRequestPage as B2BHomePage };
-
+export { B2BHomePage as B2BHomePage };

@@ -9,7 +9,7 @@ export class requestDetails{
       
 
     constructor(private page:Page){
-        this.enterDate=page.locator('#pickupDate');
+        this.enterDate=page.locator('input[id="pickupDate"]');
         this.enterNotes=page.locator('#notes');
         this.submitButton=page.getByRole('button', { name: 'إرسال الطلب' });
         this.pickupTime=page.getByText('الفجر');
@@ -23,17 +23,19 @@ export class requestDetails{
         await this.submitButton.click();
       }
 
-      async selectPickupTime(){
-          await this.pickupTime.click();
+      async selectPickupTime() {
+        await this.page.keyboard.press("Escape");
+        await this.pickupTime.click({ force: true });
       }
 
-    async ClickEnterDateButton(){
-      const today = new Date();
-
-      const formattedDate =
-        `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+      async ClickEnterDateButton() {
+        const today = new Date();
       
-      await this.enterDate.fill(formattedDate);    
-}
+        const day = String(today.getDate()).padStart(2, "0");
+        const month = String(today.getMonth() + 1).padStart(2, "0");
+        const year = today.getFullYear();
+      
+        await this.enterDate.fill(`${day}/${month}/${year}`);
+      }
 
 }
