@@ -1,42 +1,31 @@
-# ─────────────────────────────────────────────────────────────────────────────
-# TEMPLATE: apply this to tagaddod/frontend-testing-playwright
-#   .github/workflows/run-tests.yml
-#
-# What changed vs your original file:
-#   1. Added `execution_id` input  — passed automatically by the QA dashboard
-#   2. Added "Upload Playwright Report" step  — creates a downloadable artifact
-#   3. Added "Notify QA Dashboard" step  — pushes final status to Supabase
-#
-# GitHub secrets required (Settings → Secrets → Actions):
-#   QA_SUPABASE_URL          → https://nncdbyyrbgfarfnfcphs.supabase.co
-#   QA_SUPABASE_SERVICE_KEY  → your Supabase service_role key (not anon key)
-# ─────────────────────────────────────────────────────────────────────────────
-
-name: Run Tests
+name: Run Playwright Tests
 
 on:
   workflow_dispatch:
     inputs:
       env:
-        description: 'Environment'
+        description: Environment
         required: true
-        type: choice
-        options: [dev, staging, uat]
         default: staging
+        type: choice
+        options:
+          - dev
+          - staging
+          - uat
       platform:
-        description: 'Platform'
+        description: Platform
         required: true
+        default: b2b
         type: choice
         options:
           - b2b
           - b2c
           - b2x
           - greenpan
-        options: [b2b, greenpan, b2x]
-        default: b2b
       suite:
-        description: 'Test suite'
+        description: Test suite
         required: true
+        default: e2e
         type: choice
         options:
           - smoke
@@ -54,18 +43,17 @@ permissions:
 
 concurrency:
   group: pages
-  
-        default: e2e
-      # ── Added by QA dashboard ──────────────────────────────────────────────
-      execution_id:
-        description: 'QA Dashboard execution ID (set automatically — do not change)'
-        required: false
-        type: string
-        default: ''
+  cancel-in-progress: false
 
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      ENV: ${{ inputs.env }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
 
     steps:
       - uses: actions/checkout@v4
@@ -101,51 +89,29 @@ jobs:
           ENV="${{ inputs.env }}" npx playwright test --project="${{ inputs.platform }}" "tests/${{ inputs.platform }}" --grep "@${{ inputs.suite }}"
 
       - uses: actions/upload-artifact@v4
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
-
-      # ── Your existing test step — keep whatever command you already use ────
-      - name: Run Playwright tests
-        run: npx playwright test
-        env:
-          ENV: ${{ inputs.env }}
-          PLATFORM: ${{ inputs.platform }}
-          SUITE: ${{ inputs.suite }}
-
-      # ─────────────────────────────────────────────────────────────────────
-      # 1. Upload the HTML report as a GitHub Actions artifact.
-      #    Accessible from the "Artifacts" section of the run page.
-      #    always() ensures this runs even when tests fail.
-      # ─────────────────────────────────────────────────────────────────────
-      - name: Upload Playwright Report
         if: always()
-        uses: actions/upload-artifact@v4
         with:
-          name: playwright-report-${{ github.run_id }}
-          path: playwright-report/
-          retention-days: 30
+          name: playwright-report-${{ inputs.platform }}-${{ inputs.suite }}-${{ inputs.env }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
 
-      # ─────────────────────────────────────────────────────────────────────
-      # 2. Push final status to the QA Dashboard via Supabase REST API.
-      #    Runs last, always, only when execution_id was provided.
-      #    Uses service_role key → bypasses RLS → always succeeds.
-      # ─────────────────────────────────────────────────────────────────────
-      - name: Notify QA Dashboard
-        if: always() && inputs.execution_id != ''
-        env:
-          SUPABASE_URL: ${{ secrets.QA_SUPABASE_URL }}
-          SUPABASE_KEY: ${{ secrets.QA_SUPABASE_SERVICE_KEY }}
+      - name: Stage Playwright report for GitHub Pages
+        if: always()
         run: |
-          # Map GitHub job.status → dashboard status
-          if   [ "${{ job.status }}" = "success"   ]; then STATUS="passed";    EXIT=0
-          elif [ "${{ job.status }}" = "cancelled" ]; then STATUS="cancelled";  EXIT=1
-          else                                             STATUS="failed";     EXIT=1
+          RUN_ID="${{ github.run_id }}"
+          DEST="report-staging/reports/${RUN_ID}"
+          mkdir -p "$DEST"
+          if [ -d playwright-report ] && [ -n "$(ls -A playwright-report 2>/dev/null)" ]; then
+            cp -r playwright-report/. "$DEST/"
+          else
+            printf '%s\n' \
+              '<!DOCTYPE html>' \
+              '<html lang="en">' \
+              '<head><meta charset="utf-8"><title>Playwright Report</title></head>' \
+              "<body><h1>No Playwright report was generated for run ${RUN_ID}</h1></body>" \
+              '</html>' > "$DEST/index.html"
           fi
 
       - uses: actions/upload-artifact@v4
