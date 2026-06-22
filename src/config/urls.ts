@@ -19,5 +19,10 @@ export const URLs = {
     auth: `${current.B2B_BASE_URL}/auth?token=`
   },
 
+  b2x: {
+    base: current.B2X_BASE_URL,
+    auth: `${current.B2X_BASE_URL}/auth?token=`
+  },
+
   
 };

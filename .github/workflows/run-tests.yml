@@ -27,12 +27,34 @@ on:
         description: 'Platform'
         required: true
         type: choice
+        options:
+          - b2b
+          - b2c
+          - b2x
+          - greenpan
         options: [b2b, greenpan, b2x]
         default: b2b
       suite:
         description: 'Test suite'
         required: true
         type: choice
+        options:
+          - smoke
+          - regression
+          - e2e
+      execution_id:
+        description: QA Dashboard execution ID (optional)
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
         options: [smoke, regression, e2e]
         default: e2e
       # ── Added by QA dashboard ──────────────────────────────────────────────
@@ -51,6 +73,35 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+      - run: npm run test:install-browsers
+
+      - name: Debug test parameters
+        run: |
+          echo "env=${{ inputs.env }}"
+          echo "platform=${{ inputs.platform }}"
+          echo "suite=${{ inputs.suite }}"
+          echo "execution_id=${{ inputs.execution_id }}"
+
+      - name: Validate platform
+        run: |
+          case "${{ inputs.platform }}" in
+            b2b|b2c|b2x|greenpan) ;;
+            *)
+              echo "Invalid platform: ${{ inputs.platform }}. Must be one of: b2b, b2c, b2x, greenpan."
+              exit 1
+              ;;
+          esac
+
+      - name: Run Playwright tests
+        run: |
+          echo "Command: ENV=${{ inputs.env }} npx playwright test --project=${{ inputs.platform }} tests/${{ inputs.platform }} --grep @${{ inputs.suite }}"
+          ENV="${{ inputs.env }}" npx playwright test --project="${{ inputs.platform }}" "tests/${{ inputs.platform }}" --grep "@${{ inputs.suite }}"
+
+      - uses: actions/upload-artifact@v4
           node-version: '20'
           cache: 'npm'
 
@@ -98,6 +149,25 @@ jobs:
           else                                             STATUS="failed";     EXIT=1
           fi
 
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pages-report-staging
+          path: report-staging/
+          retention-days: 1
+
+      - name: Notify QA Dashboard
+        if: always() && inputs.execution_id != ''
+        env:
+          SUPABASE_URL: ${{ secrets.QA_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.QA_SUPABASE_SERVICE_KEY }}
+        run: |
+          # Map GitHub job.status → dashboard status
+          if   [ "${{ job.status }}" = "success"   ]; then STATUS="passed";    EXIT=0
+          elif [ "${{ job.status }}" = "cancelled" ]; then STATUS="cancelled";  EXIT=1
+          else                                             STATUS="failed";     EXIT=1
+          fi
+
           RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           echo "Notifying dashboard: execution=${{ inputs.execution_id }} status=${STATUS}"
@@ -122,3 +192,98 @@ jobs:
 
           # Exit 0 regardless — don't fail the workflow over a dashboard notification
           exit 0
+
+  deploy:
+    needs: test
+    if: always() && !cancelled()
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/reports/${{ github.run_id }}/
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: pages-report-staging
+          path: report-staging
+
+      - name: Build historical reports site
+        run: |
+          RUN_ID="${{ github.run_id }}"
+          SITE="site"
+          mkdir -p "$SITE/reports/$RUN_ID"
+          cp -r "report-staging/reports/$RUN_ID/." "$SITE/reports/$RUN_ID/"
+
+          if git ls-remote --exit-code --heads origin gh-pages > /dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
+            mkdir -p /tmp/gh-pages-content
+            if git archive origin/gh-pages reports | tar -x -C /tmp/gh-pages-content; then
+              for dir in /tmp/gh-pages-content/reports/*/; do
+                [ -d "$dir" ] || continue
+                name="$(basename "$dir")"
+                [ "$name" = "$RUN_ID" ] && continue
+                mkdir -p "$SITE/reports/$name"
+                cp -r "$dir/." "$SITE/reports/$name/"
+              done
+            fi
+          fi
+
+          mkdir -p "$SITE/reports/$RUN_ID"
+          cp -r "report-staging/reports/$RUN_ID/." "$SITE/reports/$RUN_ID/"
+
+          cd "$SITE/reports"
+          for old in $(ls -d */ 2>/dev/null | sed 's#/##' | sort -n | head -n -50); do
+            rm -rf "$old"
+          done
+
+          LATEST="$(ls | sort -n | tail -1)"
+          cat > ../index.html <<EOF
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta http-equiv="refresh" content="0; url=reports/${LATEST}/">
+            <title>Playwright Reports</title>
+          </head>
+          <body>
+            <p><a href="reports/${LATEST}/">Latest Playwright report (run ${LATEST})</a></p>
+          </body>
+          </html>
+          EOF
+
+      - name: Set report URL
+        id: pages_url
+        run: |
+          OWNER="$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')"
+          REPO="${{ github.event.repository.name }}"
+          URL="https://${OWNER}.github.io/${REPO}/reports/${{ github.run_id }}/"
+          echo "url=${URL}" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+
+      - name: Playwright report summary
+        if: always()
+        run: |
+          {
+            echo "## Playwright Report"
+            echo ""
+            echo "Report published to GitHub Pages: [${{ steps.pages_url.outputs.url }}](${{ steps.pages_url.outputs.url }})"
+            echo ""
+            echo "Historical reports are kept under \`reports/<run_id>/\` (latest 50 runs)."
+            echo ""
+            echo "| Input | Value |"
+            echo "| --- | --- |"
+            echo "| Environment | \`${{ inputs.env }}\` |"
+            echo "| Platform | \`${{ inputs.platform }}\` |"
+            echo "| Suite | \`${{ inputs.suite }}\` |"
+            echo "| Run ID | \`${{ github.run_id }}\` |"
+          } >> "$GITHUB_STEP_SUMMARY"

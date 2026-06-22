@@ -45,8 +45,12 @@ export default defineConfig({
       testMatch: "greenpan/**/*.spec.ts",
     },
     {
-      name: "webform",
-      testMatch: "webform/**/*.spec.ts",
+      name: "b2x",
+      dependencies: ["setup"],
+      testMatch: "b2x/**/*.spec.ts",
+      use: {
+        storageState: "playwright/.auth/user.json",
+      },
     },
   ],
 });

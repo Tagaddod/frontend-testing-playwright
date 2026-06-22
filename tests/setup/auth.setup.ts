@@ -16,5 +16,11 @@ setup("authenticate B2B and save storage state", async ({ page, token }) => {
     timeout: 60_000,
   });
 
+  await page.goto(`${URLs.b2x.auth}${token}`, { waitUntil: "domcontentloaded" });
+
+  await page.waitForURL((url) => !url.href.includes("/auth?token="), {
+    timeout: 60_000,
+  });
+
   await page.context().storageState({ path: AUTH_STATE_PATH });
 });
