@@ -27,7 +27,7 @@ test.describe("B2B create new branch", () => {
       phone: randomPhoneNumber(),
       address: testdata.b2b.address,
     });
-    await form.clickAddBranchBTN();
+    await form.clickAddBranchBTN({ waitForSuccess: true });
   });
 
   test("should show error when phone number is invalid", { tag: ["@b2b", "@regression"] }, async ({ page }) => {

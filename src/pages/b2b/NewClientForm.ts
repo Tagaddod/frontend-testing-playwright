@@ -203,12 +203,15 @@ export class NewClientForm {
     await this.page.locator('input[type="file"]').first().setInputFiles(images.banner);
   }
 
-  async clickAddBranchBTN() {
+  async clickAddBranchBTN(options: { waitForSuccess?: boolean } = {}) {
+    const { waitForSuccess = false } = options;
     await this.addBranchBTN.scrollIntoViewIfNeeded();
     await this.addBranchBTN.click();
-    await expect(this.page.getByRole("heading", { name: "تم إضافة الفرع" })).toBeVisible({
-      timeout: 60_000,
-    });
+    if (waitForSuccess) {
+      await expect(this.page.getByRole("heading", { name: "تم إضافة الفرع" })).toBeVisible({
+        timeout: 60_000,
+      });
+    }
   }
 
   registerBusinessRequestLink(): Locator {
@@ -223,7 +226,7 @@ export class NewClientForm {
   async completeB2BCreateNewBranchFlow(data: B2BNewBranchFlowData) {
     await this.completeB2BBBranchWizard(data.branchName);
     await this.fillBranchDetailsForm(data);
-    await this.clickAddBranchBTN();
+    await this.clickAddBranchBTN({ waitForSuccess: true });
     return data;
   }
 }
