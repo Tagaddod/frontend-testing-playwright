@@ -19,8 +19,9 @@ on:
         type: choice
         options:
           - b2b
-          - greenpan
+          - b2c
           - b2x
+          - greenpan
       suite:
         description: Test suite
         required: true
@@ -30,6 +31,10 @@ on:
           - smoke
           - regression
           - e2e
+      execution_id:
+        description: QA Dashboard execution ID (optional)
+        required: false
+        type: string
 
 permissions:
   contents: write
@@ -60,7 +65,28 @@ jobs:
 
       - run: npm ci
       - run: npm run test:install-browsers
-      - run: npm run test:ci -- --platform=${{ inputs.platform }} --suite=${{ inputs.suite }}
+
+      - name: Debug test parameters
+        run: |
+          echo "env=${{ inputs.env }}"
+          echo "platform=${{ inputs.platform }}"
+          echo "suite=${{ inputs.suite }}"
+          echo "execution_id=${{ inputs.execution_id }}"
+
+      - name: Validate platform
+        run: |
+          case "${{ inputs.platform }}" in
+            b2b|b2c|b2x|greenpan) ;;
+            *)
+              echo "Invalid platform: ${{ inputs.platform }}. Must be one of: b2b, b2c, b2x, greenpan."
+              exit 1
+              ;;
+          esac
+
+      - name: Run Playwright tests
+        run: |
+          echo "Command: ENV=${{ inputs.env }} npx playwright test --project=${{ inputs.platform }} tests/${{ inputs.platform }} --grep @${{ inputs.suite }}"
+          ENV="${{ inputs.env }}" npx playwright test --project="${{ inputs.platform }}" "tests/${{ inputs.platform }}" --grep "@${{ inputs.suite }}"
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -94,6 +120,43 @@ jobs:
           name: pages-report-staging
           path: report-staging/
           retention-days: 1
+
+      - name: Notify QA Dashboard
+        if: always() && inputs.execution_id != ''
+        env:
+          SUPABASE_URL: ${{ secrets.QA_SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.QA_SUPABASE_SERVICE_KEY }}
+        run: |
+          # Map GitHub job.status → dashboard status
+          if   [ "${{ job.status }}" = "success"   ]; then STATUS="passed";    EXIT=0
+          elif [ "${{ job.status }}" = "cancelled" ]; then STATUS="cancelled";  EXIT=1
+          else                                             STATUS="failed";     EXIT=1
+          fi
+
+          RUN_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          echo "Notifying dashboard: execution=${{ inputs.execution_id }} status=${STATUS}"
+
+          HTTP_STATUS=$(curl -s -o /tmp/cb_response.txt -w "%{http_code}" \
+            -X PATCH \
+            "${SUPABASE_URL}/rest/v1/project_executions?id=eq.${{ inputs.execution_id }}" \
+            -H "apikey: ${SUPABASE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d "{
+              \"status\": \"${STATUS}\",
+              \"progress\": 100,
+              \"exit_code\": ${EXIT},
+              \"completed_at\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",
+              \"github_run_url\": \"${RUN_URL}\",
+              \"github_run_id\": ${{ github.run_id }}
+            }")
+
+          echo "Response HTTP ${HTTP_STATUS}: $(cat /tmp/cb_response.txt)"
+
+          # Exit 0 regardless — don't fail the workflow over a dashboard notification
+          exit 0
 
   deploy:
     needs: test
