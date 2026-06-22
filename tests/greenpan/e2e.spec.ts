@@ -2,7 +2,7 @@ import { test, expect } from "../../src/fixtures/loginFixture";
 import { PoManager } from "../../src/core/PoManager";
 import testdata from "../../src/utils/testdata.json";
 
-test.describe("GreenPan Full Flow Tests", { tag: ["@greenpan", "@e2e"] }, () => {
+test.describe("GreenPan Full Flow Tests", () => {
   let po: PoManager;
 
   test.beforeEach(async ({ page }) => {
@@ -12,11 +12,8 @@ test.describe("GreenPan Full Flow Tests", { tag: ["@greenpan", "@e2e"] }, () => 
     await expect(po.getGreenpanHome().dashboardText()).toBeVisible();
   });
 
-  // ---------------------------------
-  test("Open GreenPan with valid new user", async () => {
-   
+  test("Open GreenPan with valid new user", { tag: ["@greenpan", "@e2e"] }, async () => {
     await po.getGreenpanHome().EnterPhoneNumber(testdata.phones.validNewUser);
-    //await expect(po.getGreenpanHome().textQuestion()).toBeVisible();
 
     await po.getGreenpanHome().EnterQuantity(testdata.quantities.medium);
     await expect(po.getGreenpanHome().textRewards()).toBeVisible();
@@ -40,10 +37,8 @@ test.describe("GreenPan Full Flow Tests", { tag: ["@greenpan", "@e2e"] }, () => 
     await po.getSendRequestPage().assertSucessMessage();
   });
 
-  test("Open GreenPan with valid existing user", async () => {
-   
+  test("Open GreenPan with valid existing user", { tag: ["@greenpan", "@e2e"] }, async () => {
     await po.getGreenpanHome().EnterPhoneNumber(testdata.phones.validUser);
-   // await expect(po.getGreenpanHome().textQuestion()).toBeVisible();
 
     await po.getGreenpanHome().EnterQuantity(testdata.quantities.medium);
     await expect(po.getGreenpanHome().textRewards()).toBeVisible();
@@ -51,10 +46,8 @@ test.describe("GreenPan Full Flow Tests", { tag: ["@greenpan", "@e2e"] }, () => 
     await po.getGreenpanHome().AddGift(0);
     await po.getGreenpanHome().NextStep();
 
-
     await po.getSendRequestPage().selectDay();
     await po.getSendRequestPage().sendRequest();
     await po.getSendRequestPage().assertSucessMessage();
   });
-
 });
