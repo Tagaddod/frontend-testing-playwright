@@ -54,8 +54,7 @@ permissions:
 
 concurrency:
   group: pages
-  cancel-in-progress: false
-        options: [smoke, regression, e2e]
+  
         default: e2e
       # ── Added by QA dashboard ──────────────────────────────────────────────
       execution_id:
