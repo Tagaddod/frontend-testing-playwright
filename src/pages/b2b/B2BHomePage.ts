@@ -93,7 +93,9 @@ export class B2BHomePage {
     await this.EnglishInputName.fill(englishName);
   }
   async selectBusinessType(businessType = "فندق") {
+    await this.businessTypeSelector.scrollIntoViewIfNeeded();
     await this.businessTypeSelector.click();
+
     const dropdown = this.page.locator("div.ant-select-dropdown:not(.ant-select-dropdown-hidden)");
     await expect(dropdown.last()).toBeVisible({ timeout: 15_000 });
 
@@ -103,10 +105,17 @@ export class B2BHomePage {
       .filter({ hasText: businessType })
       .first();
 
-    if (await typedOption.count()) {
-      await typedOption.click();
-    } else {
-      await dropdown.last().locator(".ant-select-item-option").first().click();
+    const fallbackOption = dropdown.last().locator(".ant-select-item-option").first();
+    const option = (await typedOption.count()) ? typedOption : fallbackOption;
+
+    await option.waitFor({ state: "attached", timeout: 15_000 });
+    try {
+      await option.click({ force: true });
+    } catch (err) {
+      if (this.page.isClosed()) throw err;
+      await this.businessTypeSelector.focus();
+      await this.page.keyboard.press("ArrowDown");
+      await this.page.keyboard.press("Enter");
     }
 
     await expect(this.businessTypeErrorMessage).toBeHidden({ timeout: 15_000 });
