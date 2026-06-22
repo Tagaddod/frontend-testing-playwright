@@ -15,7 +15,7 @@ test.describe("B2B create request", () => {
     const b2bData = getB2bTestData();
 
     await po.completeB2BCreateNewBranchFlow(b2bData);
-    await page.getByRole("button", { name: "تسجيل طلب بيزنس" }).click();
+    await po.getNewClientForm().registerBusinessRequestLink().click();
     await po.getB2BHomePage().open();
     await po.getB2BHomePage().selectBranch(b2bData.branchName);
     await po.getSendB2BRequestPage().CreateRequestFlow();
@@ -39,4 +39,6 @@ test.describe("B2B create request", () => {
       .locator(".ant-empty-description");
     await expect(noDataMessage).toBeVisible();
   });
+
+  
 });

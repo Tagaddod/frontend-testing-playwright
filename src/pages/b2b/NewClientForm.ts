@@ -66,9 +66,6 @@ export class NewClientForm {
     await b2b.fillEnglishInputName(branchName);
     await b2b.selectBusinessType();
     await b2b.clickNextButton();
-    if (!(await this.phoneInput.isVisible())) {
-      await b2b.clickNextButton();
-    }
     await expect(this.phoneInput).toBeVisible({ timeout: 30_000 });
   }
 
@@ -130,11 +127,39 @@ export class NewClientForm {
     const zoneLookup = this.page.waitForResponse(
       (response) =>
         response.request().method() === "POST" &&
-        response.request().postData()?.includes("getZoneByLatLng"),
-      { timeout: 15_000 }
+        response.request().postData()?.includes("getZoneByLatLng") &&
+        response.ok(),
+      { timeout: 30_000 }
     );
     await this.AdressInput.fill(LatAndLong);
-    await zoneLookup.catch(() => undefined);
+    await this.AdressInput.press("Tab");
+    await zoneLookup;
+
+    const loading = this.page.getByText("جاري التحميل");
+    if (await loading.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await expect(loading).toBeHidden({ timeout: 30_000 });
+    }
+
+    const governorateError = this.page.getByText("يجب اختيار المحافظة التابع لها الفرع");
+    if (await governorateError.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await this.selectAddressHierarchy();
+    }
+
+    await expect(governorateError).toBeHidden({ timeout: 15_000 });
+  }
+
+  private async selectAddressDropdown(label: string, optionIndex = 0) {
+    const formItem = this.page.locator(".ant-form-item").filter({ hasText: label }).first();
+    await formItem.locator(".ant-select-selector").click();
+    const dropdown = this.page.locator("div.ant-select-dropdown:not(.ant-select-dropdown-hidden)");
+    await expect(dropdown.last()).toBeVisible({ timeout: 15_000 });
+    await dropdown.last().locator(".ant-select-item-option").nth(optionIndex).click();
+  }
+
+  private async selectAddressHierarchy() {
+    await this.selectAddressDropdown("اسم المحافظة");
+    await this.selectAddressDropdown("اسم المدينة");
+    await this.selectAddressDropdown("اسم الزون");
   }
 
   async selectPaymentMethod() {
@@ -181,6 +206,13 @@ export class NewClientForm {
   async clickAddBranchBTN() {
     await this.addBranchBTN.scrollIntoViewIfNeeded();
     await this.addBranchBTN.click();
+    await expect(this.page.getByRole("heading", { name: "تم إضافة الفرع" })).toBeVisible({
+      timeout: 60_000,
+    });
+  }
+
+  registerBusinessRequestLink(): Locator {
+    return this.page.getByRole("link", { name: "تسجيل طلب بيزنس" });
   }
 
   /**

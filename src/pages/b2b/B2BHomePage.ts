@@ -1,9 +1,6 @@
 import { expect, Locator, Page } from "@playwright/test";
 import { URLs } from "../../config/urls";
 
-/**
- * Branch selection step on B2B "تسجيل طلب بيزنس" — combobox search, not a plain Search input.
- */
 export class B2BHomePage {
   readonly branchCombobox: Locator;
   readonly nxtButton: Locator;
@@ -11,9 +8,11 @@ export class B2BHomePage {
   readonly branchNameInput:Locator;
   readonly searchBranch:Locator;
   readonly AddNewClientBTN:Locator;
-    readonly EnglishInputName:Locator;
-    readonly businessType:Locator;
-    readonly clientNameErrorMessage: Locator;
+  readonly EnglishInputName:Locator;
+  readonly businessType: Locator;
+  readonly businessTypeSelector: Locator;
+  readonly clientNameErrorMessage: Locator;
+  readonly businessTypeErrorMessage: Locator;
 
     constructor(private page: Page) {
     this.branchCombobox = page
@@ -26,8 +25,16 @@ export class B2BHomePage {
     this.branchNameInput=page.getByPlaceholder('ابحث بإسم البيزنس');
     this.AddNewClientBTN=page.locator('span:has-text("إضافة عميل جديد")');
     this.EnglishInputName=page.locator('#nameEN');
-    this.businessType=page.locator('#brandTypeId');
-    this.clientNameErrorMessage=page.locator('.ant-form-item:has(#nameAR) .ant-form-item-explain-error');
+    this.businessType = page.locator("#brandTypeId");
+    this.businessTypeSelector = page.locator(
+      '.ant-form-item:has(#brandTypeId) .ant-select-selector'
+    );
+    this.clientNameErrorMessage = page.locator(
+      ".ant-form-item:has(#nameAR) .ant-form-item-explain-error"
+    );
+    this.businessTypeErrorMessage = page.locator(
+      ".ant-form-item:has(#brandTypeId) .ant-form-item-explain-error"
+    );
   }
 
   async open() {
@@ -86,22 +93,23 @@ export class B2BHomePage {
     await this.EnglishInputName.fill(englishName);
   }
   async selectBusinessType(businessType = "فندق") {
-    await this.businessType.click();
-    const option = this.page
-      .locator("div.ant-select-dropdown")
+    await this.businessTypeSelector.click();
+    const dropdown = this.page.locator("div.ant-select-dropdown:not(.ant-select-dropdown-hidden)");
+    await expect(dropdown.last()).toBeVisible({ timeout: 15_000 });
+
+    const typedOption = dropdown
       .last()
-      .locator(".ant-select-item-option, [role='option']")
+      .locator(".ant-select-item-option")
       .filter({ hasText: businessType })
       .first();
-    try {
-      await option.waitFor({ state: "attached", timeout: 15_000 });
-      await option.click({ force: true });
-    } catch (err) {
-      if (this.page.isClosed()) throw err;
-      await this.businessType.focus();
-      await this.page.keyboard.press("ArrowDown");
-      await this.page.keyboard.press("Enter");
+
+    if (await typedOption.count()) {
+      await typedOption.click();
+    } else {
+      await dropdown.last().locator(".ant-select-item-option").first().click();
     }
+
+    await expect(this.businessTypeErrorMessage).toBeHidden({ timeout: 15_000 });
   }
 
 }
