@@ -8,12 +8,18 @@ import {
   buildUpdateQualityOptionalFieldsInput,
   buildVerifySampleCodeData,
 } from "../../../src/api/warehouse/testData";
+import { ENV } from "../../../src/config/env";
 import { expect, test } from "../../../src/fixtures/apiFixture";
 
 function tripLoadEnv() {
-  const tripId = process.env.WAREHOUSE_TRIP_ID;
-  const channelType = process.env.WAREHOUSE_CHANNEL_TYPE ?? "B2B";
+  const tripId = ENV.WAREHOUSE_TRIP_ID;
+  const channelType = ENV.WAREHOUSE_CHANNEL_TYPE;
   return { tripId, channelType };
+}
+
+/** Channel that should be rejected for this trip (not WAREHOUSE_CHANNEL_TYPE). */
+function wrongChannelForTrip(channelType: string): string {
+  return channelType.toUpperCase() === "B2X" ? "B2B" : "B2X";
 }
 
 test.describe("Warehouse GraphQL API — trip load", () => {
@@ -714,12 +720,14 @@ test.describe("Warehouse GraphQL API — trip load", () => {
     "reject create trip load when channel is not on the trip",
     { tag: ["@all-regression", "@warehouse-regression", "@create-trip-load-with-quality"] },
     async ({ api }) => {
-      const tripId = process.env.WAREHOUSE_TRIP_ID;
+      const { tripId, channelType } = tripLoadEnv();
       test.skip(!tripId, "Set WAREHOUSE_TRIP_ID to a valid trip id");
 
       const wh = api.warehouse;
-      // Trip 33969 is B2B-only — B2X must be rejected
-      const createPayload = buildCreateTripLoadData({ tripId: tripId!, channelType: "B2X" });
+      const createPayload = buildCreateTripLoadData({
+        tripId: tripId!,
+        channelType: wrongChannelForTrip(channelType),
+      });
       const createLoad = await wh.createTripLoad(createPayload);
       expect(createLoad.errors).toBeDefined();
       expect(createLoad.data?.createTripLoad).toBeFalsy();
@@ -734,8 +742,7 @@ test.describe("Warehouse GraphQL API — trip load", () => {
     "create trip load with matching channel from env",
     { tag: ["@all-regression", "@warehouse-regression", "@create-trip-load-with-quality"] },
     async ({ api }) => {
-      const tripId = process.env.WAREHOUSE_TRIP_ID;
-      const channelType = process.env.WAREHOUSE_CHANNEL_TYPE ?? "B2B";
+      const { tripId, channelType } = tripLoadEnv();
       test.skip(!tripId, "Set WAREHOUSE_TRIP_ID to a valid trip id");
 
       const wh = api.warehouse;

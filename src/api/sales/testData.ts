@@ -166,6 +166,10 @@ export function validBranchVariables(
     phone: string;
     payment_type: string;
     country_code: string;
+    street_name: string;
+    building_number: number;
+    apartment: number;
+    floor: number;
   }> = {},
 ): CreateSalesBranchData {
   const {
@@ -177,6 +181,10 @@ export function validBranchVariables(
     phone = randomPhoneNumber(),
     payment_type = "CASH",
     country_code,
+    street_name = "Test Street",
+    building_number = 1,
+    apartment = 1,
+    floor = 1,
   } = overrides;
 
   return {
@@ -186,6 +194,10 @@ export function validBranchVariables(
     longitude,
     phone,
     payment_type,
+    street_name,
+    building_number,
+    apartment,
+    floor,
     ...(country_code ? { country_code } : {}),
   };
 }

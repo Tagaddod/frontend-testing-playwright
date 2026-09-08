@@ -60,7 +60,9 @@ export default defineConfig({
         storageState: "playwright/.auth/user.json",
       },
     },
-    // Ordered B2X API: SuperApp saves traderId, then Request reuses it.
+    // Sales API projects are dependency-free: every spec builds its own trader /
+    // branch / contract. Adding `dependencies` here would make Playwright run those
+    // projects in full on any `--grep`, because filters never apply to dependencies.
     {
       name: "api-b2x",
       testMatch: "api/sales/b2x/createTraderSuperApp.spec.ts",
@@ -68,12 +70,9 @@ export default defineConfig({
     },
     {
       name: "api-b2x-request",
-      // Ordered after SuperApp so traderId.json exists; Sales suite stays self-contained.
-      dependencies: ["api-b2x"],
       testMatch: "api/sales/b2x/createTraderRequestSalesAgent.spec.ts",
       fullyParallel: false,
     },
-    // Ordered Sales B2B API: createBranch → signContract → createBusinessRequest.
     {
       name: "api-sales-branch",
       testMatch: "api/sales/b2b/createBranch.spec.ts",
@@ -81,26 +80,28 @@ export default defineConfig({
     },
     {
       name: "api-sales-sign-contract",
-      // Backend requires a signed contract before createBusinessRequestSuperApp.
-      dependencies: ["api-sales-branch"],
       testMatch: "api/sales/b2b/signContractSuperApp.spec.ts",
       fullyParallel: false,
     },
     {
       name: "api-sales-business-request",
-      dependencies: ["api-sales-sign-contract"],
       testMatch: "api/sales/b2b/createBusinessRequestSuperApp.spec.ts",
       fullyParallel: false,
     },
     {
-      // Sales (non-b2x/non-b2b-flow) + other API specs.
-      name: "api-other",
-      dependencies: ["api-sales-business-request"],
-      testMatch: /api\/(?!sales\/b2x\/|sales\/b2b\/).*\.spec\.ts$/,
+      // Warehouse specs only need WAREHOUSE_TRIP_ID — no Sales setup.
+      name: "api-warehouse",
+      testMatch: /api\/warehouse\/.*\.spec\.ts$/,
       fullyParallel: false,
     },
     {
-      // `--project=api` runs dependencies in order (B2X → Sales B2B flow → other API).
+      // Webform (admin-token) + any future API spec outside sales/warehouse.
+      name: "api-other",
+      testMatch: /api\/(?!sales\/b2x\/|sales\/b2b\/|warehouse\/).*\.spec\.ts$/,
+      fullyParallel: false,
+    },
+    {
+      // `--project=api` fans out to every API project, so one suite tag can span them.
       name: "api",
       dependencies: [
         "api-b2x",
@@ -108,6 +109,7 @@ export default defineConfig({
         "api-sales-branch",
         "api-sales-sign-contract",
         "api-sales-business-request",
+        "api-warehouse",
         "api-other",
       ],
       testMatch: /a^/,
