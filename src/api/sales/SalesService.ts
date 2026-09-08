@@ -29,6 +29,10 @@ export type CreateSalesBranchData = {
   phone: string;
   payment_type: string;
   country_code?: string;
+  street_name: string;
+  building_number: number;
+  apartment: number;
+  floor: number;
 };
 
 export type CreateSalesBranchResult = {

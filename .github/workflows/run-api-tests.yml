@@ -51,8 +51,8 @@ jobs:
       ENV: ${{ inputs.env }}
       ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
-      WAREHOUSE_TRIP_ID: ${{ secrets.WAREHOUSE_TRIP_ID }}
-      WAREHOUSE_CHANNEL_TYPE: ${{ vars.WAREHOUSE_CHANNEL_TYPE }}
+      WAREHOUSE_TRIP_ID: ${{ vars.WAREHOUSE_TRIP_ID || '34312' }}
+      WAREHOUSE_CHANNEL_TYPE: ${{ vars.WAREHOUSE_CHANNEL_TYPE || 'B2X' }}
       SALES_APP_EG_PHONE: ${{ secrets.SALES_APP_EG_PHONE }}
       SALES_APP_EG_PASSWORD: ${{ secrets.SALES_APP_EG_PASSWORD }}
       SALES_APP_EG_COUNTRY_CODE: ${{ secrets.SALES_APP_EG_COUNTRY_CODE }}
@@ -99,20 +99,20 @@ jobs:
               ENV="${ENV_NAME}" npx playwright test --project=api --grep "@sales-app-regression" --workers=1
               ;;
             warehouse-regression)
-              echo "Command: ENV=${ENV_NAME} npx playwright test --project=api --grep @warehouse-regression --workers=1"
-              ENV="${ENV_NAME}" npx playwright test --project=api --grep "@warehouse-regression" --workers=1
+              echo "Command: ENV=${ENV_NAME} npx playwright test --project=api-warehouse --grep @warehouse-regression --workers=1"
+              ENV="${ENV_NAME}" npx playwright test --project=api-warehouse --grep "@warehouse-regression" --workers=1
               ;;
             collector-regression)
               echo "Command: ENV=${ENV_NAME} npx playwright test --project=api --grep @collector-regression --workers=1 --pass-with-no-tests"
               ENV="${ENV_NAME}" npx playwright test --project=api --grep "@collector-regression" --workers=1 --pass-with-no-tests
               ;;
             create-trip-load-with-quality)
-              echo "Command: ENV=${ENV_NAME} npx playwright test --project=api --grep @create-trip-load-with-quality --workers=1"
-              ENV="${ENV_NAME}" npx playwright test --project=api --grep "@create-trip-load-with-quality" --workers=1
+              echo "Command: ENV=${ENV_NAME} npx playwright test --project=api-warehouse --grep @create-trip-load-with-quality --workers=1"
+              ENV="${ENV_NAME}" npx playwright test --project=api-warehouse --grep "@create-trip-load-with-quality" --workers=1
               ;;
             create-middle-mile-with-quality)
-              echo "Command: ENV=${ENV_NAME} npx playwright test --project=api --grep @create-middle-mile-with-quality --workers=1"
-              ENV="${ENV_NAME}" npx playwright test --project=api --grep "@create-middle-mile-with-quality" --workers=1
+              echo "Command: ENV=${ENV_NAME} npx playwright test --project=api-warehouse --grep @create-middle-mile-with-quality --workers=1"
+              ENV="${ENV_NAME}" npx playwright test --project=api-warehouse --grep "@create-middle-mile-with-quality" --workers=1
               ;;
             create-b2b-request)
               echo "Command: ENV=${ENV_NAME} npx playwright test --project=api --grep @create-b2b-request --workers=1"

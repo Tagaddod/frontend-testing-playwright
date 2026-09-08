@@ -63,4 +63,11 @@ export const ENV = {
   /** Optional defaults for admin B2B createBranch API test */
   BUSINESS_CLIENT_ID: process.env.BUSINESS_CLIENT_ID || "",
   COLLECTABLE_ID: process.env.COLLECTABLE_ID || "",
+
+  /**
+   * Collection trip used by warehouse trip-load (scale + quality) tests.
+   * Staging default: B2X collection trip 34312.
+   */
+  WAREHOUSE_TRIP_ID: process.env.WAREHOUSE_TRIP_ID || "34312",
+  WAREHOUSE_CHANNEL_TYPE: process.env.WAREHOUSE_CHANNEL_TYPE || "B2X",
 };

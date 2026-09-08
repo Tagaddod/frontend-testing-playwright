@@ -1,4 +1,8 @@
-import { validBusinessRequestVariables } from "../../../../src/api/sales/testData";
+import {
+  validBranchVariables,
+  validBusinessRequestVariables,
+  validSignContractVariables,
+} from "../../../../src/api/sales/testData";
 import { saveApiResponse } from "../../../../src/api/saveApiResponse";
 import { expect, test } from "../../../../src/fixtures/apiFixture";
 
@@ -9,11 +13,26 @@ test.describe("CreateBusinessRequestSuperApp", () => {
     "Create Business Request SuperApp - Valid",
     { tag: ["@all-regression", "@sales-app-regression", "@create-b2b-request"] },
     async ({ salesAppEgyptApi }) => {
-      // const branchVariables = validBranchVariables();
+      // A fresh branch avoids "Branch has already an active request"; the backend
+      // also rejects the request unless that branch has a signed contract.
+      const branchResponse = await salesAppEgyptApi.sales.createBranch(validBranchVariables());
+      expect(
+        branchResponse.errors,
+        "Branch creation should succeed without GraphQL errors.",
+      ).toBeUndefined();
 
-      // const responsebranch = await salesAppEgyptApi.sales.createBranch(branchVariables);
-      const branchId = "387925296";
-      const businessRequestVariables = validBusinessRequestVariables(branchId);
+      const branchId = branchResponse.data?.createBranch?.id;
+      expect(branchId, "A valid Branch ID should be returned.").toBeTruthy();
+
+      const signResponse = await salesAppEgyptApi.sales.signContractSuperApp(
+        validSignContractVariables(branchId!),
+      );
+      expect(
+        signResponse.errors,
+        "The contract should be signed without GraphQL errors.",
+      ).toBeUndefined();
+
+      const businessRequestVariables = validBusinessRequestVariables(branchId!);
       const response =
         await salesAppEgyptApi.sales.createBusinessRequestSuperApp(businessRequestVariables);
       expect(

@@ -7,6 +7,10 @@ export const CREATE_BRANCH = `
     $phone: String!
     $payment_type: PaymentType!
     $country_code: String
+    $street_name: String!
+    $building_number: Int!
+    $apartment: Int!
+    $floor: Int!
   ) {
     createBranch(
       business_client_id: $business_client_id
@@ -16,6 +20,10 @@ export const CREATE_BRANCH = `
       phone: $phone
       payment_type: $payment_type
       country_code: $country_code
+      street_name: $street_name
+      building_number: $building_number
+      apartment: $apartment
+      floor: $floor
     ) {
       id
       name
